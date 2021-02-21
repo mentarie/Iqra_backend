@@ -79,24 +79,30 @@ type User struct {
 }
 
 func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err.Error())
+	}
 	var user database.User
+	json.Unmarshal(body, &user)
 
 	//compare the user from the request, with the one we defined:
 	if _, err := database.Validate(user, con.db); err != nil {
 		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
+	} else {
+		//log.Println(database.Validate(user, con.db))
+		token, err := database.CreateToken(user.Id)
+		if err != nil {
+			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
+			return
+		}
+		tokens := map[string]string{
+			"access_token":  token.AccessToken,
+			"refresh_token": token.RefreshToken,
+		}
+		WrapAPIData(w, r, tokens, http.StatusOK, "success")
 	}
-
-	token, err := database.CreateToken(user.Id)
-	if err != nil {
-		WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
-		return
-	}
-	tokens := map[string]string{
-		"access_token":  token.AccessToken,
-		"refresh_token": token.RefreshToken,
-	}
-	WrapAPIData(w, r, tokens, http.StatusOK, "success")
 	return
 }
 

@@ -91,44 +91,15 @@ func Validate(user User, db *gorm.DB) (bool, error) {
 	var status bool
 
 	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
-	if err := db.Where(&User{Username: user.Username, Password: user.Password}).First(&uservalidation).Error; err != nil {
+	if err := db.Where(&User{ Username: user.Username, Password: user.Password}).First(&uservalidation).Error; err != nil {
 		log.Println("failed to get data :", err.Error())
-		status = false
+		return false, err
 	} else {
 		status = true
 	}
 	//nilai apa yang mau dikembalikan
 	return status, nil
 }
-
-//func Login(context *gin.Context) error {
-//	var u User
-//	var user *User
-//	if err := context.ShouldBindJSON(&u); err != nil {
-//		context.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
-//		return err
-//	}
-//	//compare the user from the request, with the one we defined:
-//	if user.Username != u.Username || user.Password != u.Password {
-//		context.JSON(http.StatusUnauthorized, "Please provide valid login details")
-//		return err
-//	}
-//	token, err := CreateToken(user.Id)
-//	if err != nil {
-//		context.JSON(http.StatusUnprocessableEntity, err.Error())
-//		return err
-//	}
-//	if err != nil {
-//		context.JSON(http.StatusUnprocessableEntity, err.Error())
-//		return err
-//	}
-//	tokens := map[string]string{
-//		"access_token":  token.AccessToken,
-//		"refresh_token": token.RefreshToken,
-//	}
-//	context.JSON(http.StatusOK, tokens)
-//	return nil
-//}
 
 func CreateToken(userid uint64) (*TokenDetails, error) {
 	//2
