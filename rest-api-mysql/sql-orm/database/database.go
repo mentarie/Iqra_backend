@@ -46,9 +46,9 @@ func GetUsers(db *gorm.DB) ([]User, error) {
 	return users, nil
 }
 
-func GetUser(id uint64, db *gorm.DB) (User, error) {
+func GetUser(username string, db *gorm.DB) (User, error) {
 	var user User
-	if err := db.Where(&User{Id: id}).Find(&user).Error; err != nil {
+	if err := db.Where(&User{Username: username}).Find(&user).Error; err != nil {
 		log.Println("failed to get data :", err.Error())
 		return User{}, err
 	}

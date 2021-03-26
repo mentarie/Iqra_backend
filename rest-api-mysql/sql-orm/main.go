@@ -56,10 +56,10 @@ func initDB(dbConfig config.Database) (*gorm.DB, error) {
 func handleRequest(con Connection) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/users", con.GetUsersHandler).Methods("GET")
-	router.HandleFunc("/users", con.CreateUserHandler).Methods("POST")
+	router.HandleFunc("/create", con.CreateUserHandler).Methods("POST")
 	router.HandleFunc("/login", con.LoginHandler).Methods("POST")
 	router.HandleFunc("/token/refresh", con.Refresh).Methods("POST")
-	router.HandleFunc("/users/{id}", con.GetUserHandler).Methods("GET")
+	//router.HandleFunc("/users/{id}", con.GetUserHandler).Methods("GET")
 	router.HandleFunc("/users/{id}", con.UpdateUserHandler).Methods("PUT")
 	router.HandleFunc("/users/{id}", con.DeleteUser).Methods("DELETE")
 
@@ -77,6 +77,14 @@ type User struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+type Todo struct {
+	UserID uint64 `json:"user_id"`
+	Title string `json:"title"`
+}
+type AccessDetails struct {
+	AccessUuid string
+	UserId   uint64
+}
 
 func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
@@ -92,6 +100,12 @@ func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		//log.Println(database.Validate(user, con.db))
+		userData, err := database.GetUser(user.Username, con.db)
+		if err!= nil{
+			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
+			return
+		}
+
 		token, err := database.CreateToken(user.Id)
 		if err != nil {
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
@@ -100,6 +114,8 @@ func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tokens := map[string]string{
 			"access_token":  token.AccessToken,
 			"refresh_token": token.RefreshToken,
+			"username": userData.Username,
+			"email": userData.Email,
 		}
 		WrapAPIData(w, r, tokens, http.StatusOK, "success")
 	}
@@ -180,21 +196,21 @@ func (con *Connection) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (con *Connection) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	if id, err := strconv.Atoi(params["id"]); err != nil {
-		log.Println("Error while converting integer")
-		return
-	} else {
-		if user, err := database.GetUser(uint64(id), con.db); err != nil {
-			log.Println("Error getting user data ", err.Error())
-			return
-		} else {
-			WrapAPIData(w,r, user, http.StatusOK, "success")
-		}
-	}
-}
+//func (con *Connection) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+//	params := mux.Vars(r)
+//
+//	if username, err := strconv.Atoi(params["id"]); err != nil {
+//		log.Println("Error while converting integer")
+//		return
+//	} else {
+//		if user, err := database.GetUser(username, con.db); err != nil {
+//			log.Println("Error getting user data ", err.Error())
+//			return
+//		} else {
+//			WrapAPIData(w,r, user, http.StatusOK, "success")
+//		}
+//	}
+//}
 
 func (con *Connection) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
@@ -216,7 +232,6 @@ func (con *Connection) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 			WrapAPISuccess(w, r, "success", http.StatusOK)
 		}
 	}
-
 }
 
 func (con *Connection) DeleteUser(w http.ResponseWriter, r *http.Request) {
