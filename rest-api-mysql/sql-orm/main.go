@@ -78,7 +78,7 @@ type User struct {
 }
 type Iqra struct {
 	gorm.Model
-	Id 		 		uint64	`json:"id" gorm:"primary_key"`
+	Id				uint64	`json:"id" gorm:"primary_key"`
 	File_url 		string	`json:"file_url"`
 	File_type 		string	`json:"file_type"`
 	File_label		string	`json:"file_label"`
