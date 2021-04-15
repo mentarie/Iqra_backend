@@ -59,9 +59,9 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/create", con.CreateUserHandler).Methods("POST")
 	router.HandleFunc("/login", con.LoginHandler).Methods("POST")
 	router.HandleFunc("/token/refresh", con.Refresh).Methods("POST")
-	//router.HandleFunc("/users/{id}", con.GetUserHandler).Methods("GET")
-	router.HandleFunc("/users/{id}", con.UpdateUserHandler).Methods("PUT")
-	router.HandleFunc("/users/{id}", con.DeleteUser).Methods("DELETE")
+	//router.HandleFunc("/submission", con.UploadFileHandler).Methods("POST")
+	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
+	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":8081", router))
 }
@@ -71,11 +71,28 @@ type Connection struct {
 }
 type User struct {
 	gorm.Model
-	Id       uint64 `json:"id" gorm:"primary_key"`
-	Id_user  string `json:"id_user"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id       		uint64 `json:"id" gorm:"primary_key"`
+	Username 		string `json:"username"`
+	Email    		string `json:"email"`
+	Password 		string `json:"password"`
+}
+type Iqra struct {
+	gorm.Model
+	Id 		 		uint64	`json:"id" gorm:"primary_key"`
+	File_url 		string	`json:"file_url"`
+	File_type 		string	`json:"file_type"`
+	File_label		string	`json:"file_label"`
+}
+type Submission struct {
+	gorm.Model
+	Id              uint64  `json:"id" gorm:"primary_key"`
+	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreign_key"`
+	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreign_key"`
+	Id_file_refer   uint64  `json:"Id_file_refer" gorm:"foreign_key"`
+	Accuracy        float64 `json:"accuracy"`
+	Confidence      float64 `json:"confidence"`
+	Actual_result   string  `json:"actual_result"`
+	Expected_result string  `json:"expected_result"`
 }
 type Todo struct {
 	UserID uint64 `json:"user_id"`
@@ -95,18 +112,18 @@ func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(body, &user)
 
 	//compare the user from the request, with the one we defined:
-	if _, err := database.Validate(user, con.db); err != nil {
+	if _, err, id := database.Validate(user.Id, con.db); err != nil {
 		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
 		//log.Println(database.Validate(user, con.db))
-		userData, err := database.GetUser(user.Username, con.db)
+		userData, err := database.GetUser(id, con.db)
 		if err!= nil{
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
 			return
 		}
 
-		token, err := database.CreateToken(user.Id)
+		token, err := database.CreateToken(id)
 		if err != nil {
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
 			return
@@ -114,6 +131,7 @@ func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tokens := map[string]string{
 			"access_token":  token.AccessToken,
 			"refresh_token": token.RefreshToken,
+			"id": strconv.FormatUint(userData.Id, 10),
 			"username": userData.Username,
 			"email": userData.Email,
 		}
@@ -196,25 +214,7 @@ func (con *Connection) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//func (con *Connection) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-//	params := mux.Vars(r)
-//
-//	if username, err := strconv.Atoi(params["id"]); err != nil {
-//		log.Println("Error while converting integer")
-//		return
-//	} else {
-//		if user, err := database.GetUser(username, con.db); err != nil {
-//			log.Println("Error getting user data ", err.Error())
-//			return
-//		} else {
-//			WrapAPIData(w,r, user, http.StatusOK, "success")
-//		}
-//	}
-//}
-
 func (con *Connection) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err.Error())
@@ -222,35 +222,49 @@ func (con *Connection) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 	var user database.User
 	json.Unmarshal(body, &user)
 
-	if id, err := strconv.Atoi(params["id"]); err != nil {
-		log.Println("Error while converting integer")
+	//compare the user from the request, with the one we defined:
+	if _, err, id := database.Validate(user.Id, con.db); err != nil {
+		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
-		if err := database.UpdateUser(uint64(id), user, con.db); err != nil {
-			WrapAPIError(w,r, fmt.Sprintf("Error while updating user : ", err.Error()), http.StatusBadRequest)
+		//log.Println(id)
+		_, err := database.UpdateUser(id, user, con.db)
+		if err != nil {
+			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
+			return
 		} else {
-			WrapAPISuccess(w, r, "success", http.StatusOK)
+			WrapAPISuccess(w, r, "data updated", http.StatusOK)
 		}
 	}
+	return
 }
 
 func (con *Connection) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	if id, err := strconv.Atoi(params["id"]); err != nil {
-		log.Println("Error while converting integer")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err.Error())
+	}
+	var user database.User
+	json.Unmarshal(body, &user)
+
+	if _, err, id := database.Validate(user.Id, con.db); err != nil {
+		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
-		if err := database.DeleteUser(uint64(id), con.db); err != nil {
-			WrapAPIError(w,r, fmt.Sprintf("Error while deleting user : ", err.Error()), http.StatusBadRequest)
+		//log.Println(database.Validate(user, con.db))
+		//log.Println(user.Username)
+		err := database.DeleteUser(id, con.db)
+		if err != nil {
+			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
+			return
 		} else {
 			WrapAPISuccess(w, r, "success", http.StatusOK)
 		}
 	}
+	return
 }
 
-
 func main() {
-
 	cfg, err := getConfig()
 	if err != nil {
 		log.Println(err)

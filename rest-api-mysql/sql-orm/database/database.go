@@ -18,11 +18,28 @@ var err error
 
 type User struct {
 	gorm.Model
-	Id       uint64 `json:"id" gorm:"primary_key"`
-	Id_user  string `json:"id_user"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id       		uint64 `json:"id" gorm:"primary_key"`
+	Username 		string `json:"username"`
+	Email    		string `json:"email"`
+	Password 		string `json:"password"`
+}
+type Iqra struct {
+	gorm.Model
+	Id 		 		uint64	`json:"id" gorm:"primary_key"`
+	File_url 		string	`json:"file_url"`
+	File_type 		string	`json:"file_type"`
+	File_label		string	`json:"file_label"`
+}
+type Submission struct {
+	gorm.Model
+	Id              uint64  `json:"id" gorm:"primary_key"`
+	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreign_key"`
+	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreign_key"`
+	Id_file_refer   uint64  `json:"Id_file_refer" gorm:"foreign_key"`
+	Accuracy        float64 `json:"accuracy"`
+	Confidence      float64 `json:"confidence"`
+	Actual_result   string  `json:"actual_result"`
+	Expected_result string  `json:"expected_result"`
 }
 type TokenDetails struct {
 	AccessToken  string
@@ -46,9 +63,11 @@ func GetUsers(db *gorm.DB) ([]User, error) {
 	return users, nil
 }
 
-func GetUser(username string, db *gorm.DB) (User, error) {
+func GetUser(id uint64, db *gorm.DB) (User, error) {
 	var user User
-	if err := db.Where(&User{Username: username}).Find(&user).Error; err != nil {
+	if err := db.Where(&User{
+		Id: id,
+	}).Find(&user).Error; err != nil {
 		log.Println("failed to get data :", err.Error())
 		return User{}, err
 	}
@@ -63,42 +82,49 @@ func CreateUser(user User, db *gorm.DB) error {
 	return nil
 }
 
-func UpdateUser(id uint64, user User, db *gorm.DB) error {
+func UpdateUser(id uint64, user User, db *gorm.DB) (error, error) {
 	if err := db.Model(&User{}).Where(&User{
 		Id: id,
-	}).Updates(user).Error; err != nil {
-		return err
+	}).Updates(&user).Error; err != nil {
+		return err, nil
 	}
-	log.Println("Success update data")
-	return nil
+	return nil, nil
 }
 
 func DeleteUser(id uint64, db *gorm.DB) error {
 	var user User
-	if err := db.Where(&User{Id: id}).Find(&user).Error; err != nil {
+	if err := db.Model(&User{}).Where(&User{
+		Id: id,
+	}).Find(&user).Error; err != nil {
 		return err
 	}
-	if err := db.Delete(user).Error; err != nil {
+	//log.Println(user)
+	//log.Println(username)
+	if err := db.Delete(&user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 //Validate user detail
-func Validate(user User, db *gorm.DB) (bool, error) {
+func Validate(id uint64, db *gorm.DB) (bool, error, uint64) {
 	//data yang dipake buat validasi
 	var uservalidation User
 	var status bool
 
 	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
-	if err := db.Where(&User{ Username: user.Username, Password: user.Password}).First(&uservalidation).Error; err != nil {
+	if err := db.Where(&User{
+		Id: id,
+	}).First(&uservalidation).Error; err != nil {
 		log.Println("failed to get data :", err.Error())
-		return false, err
+		return false, err, uservalidation.Id
 	} else {
 		status = true
+		//log.Println(status)
+		//log.Println(uservalidation.Id)
 	}
 	//nilai apa yang mau dikembalikan
-	return status, nil
+	return status, nil, uservalidation.Id
 }
 
 func CreateToken(userid uint64) (*TokenDetails, error) {
