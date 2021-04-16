@@ -112,11 +112,12 @@ func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(body, &user)
 
 	//compare the user from the request, with the one we defined:
-	if _, err, id := database.Validate(user.Id, con.db); err != nil {
+	if _, err, id := database.ValidateLogin(user, con.db); err != nil {
 		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
-		//log.Println(database.Validate(user, con.db))
+		//log.Println(database.ValidateLogin(user, con.db))
+		//log.Println(id)
 		userData, err := database.GetUser(id, con.db)
 		if err!= nil{
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
@@ -228,12 +229,18 @@ func (con *Connection) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	} else {
 		//log.Println(id)
-		_, err := database.UpdateUser(id, user, con.db)
+		_, err, user := database.UpdateUser(id, user, con.db)
 		if err != nil {
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
 			return
 		} else {
-			WrapAPISuccess(w, r, "data updated", http.StatusOK)
+			userData := map[string]string{
+				"id": strconv.FormatUint(id, 10),
+				"username": user.Username,
+				"email": user.Email,
+				"password": user.Password,
+			}
+			WrapAPIData(w, r, userData, http.StatusOK, "data updated")
 		}
 	}
 	return

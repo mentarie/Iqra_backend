@@ -82,13 +82,15 @@ func CreateUser(user User, db *gorm.DB) error {
 	return nil
 }
 
-func UpdateUser(id uint64, user User, db *gorm.DB) (error, error) {
+func UpdateUser(id uint64, user User, db *gorm.DB) (error, error, User) {
 	if err := db.Model(&User{}).Where(&User{
 		Id: id,
 	}).Updates(&user).Error; err != nil {
-		return err, nil
+		return err, nil, user
 	}
-	return nil, nil
+	//log.Println(id)
+	//log.Println(user)
+	return nil, nil, user
 }
 
 func DeleteUser(id uint64, db *gorm.DB) error {
@@ -122,6 +124,26 @@ func Validate(id uint64, db *gorm.DB) (bool, error, uint64) {
 		status = true
 		//log.Println(status)
 		//log.Println(uservalidation.Id)
+	}
+	//nilai apa yang mau dikembalikan
+	return status, nil, uservalidation.Id
+}
+
+//Validate login
+func ValidateLogin(user User, db *gorm.DB) (bool, error, uint64) {
+	//data yang dipake buat validasi
+	var uservalidation User
+	var status bool
+
+	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
+	if err := db.Where(&User{
+		Username: user.Username,
+		Password: user.Password,
+	}).First(&uservalidation).Error; err != nil {
+		log.Println("failed to get data :", err.Error())
+		return false, err , uservalidation.Id
+	} else {
+		status = true
 	}
 	//nilai apa yang mau dikembalikan
 	return status, nil, uservalidation.Id
