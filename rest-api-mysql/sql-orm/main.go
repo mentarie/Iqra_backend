@@ -47,7 +47,9 @@ func initDB(dbConfig config.Database) (*gorm.DB, error) {
 		return nil, err
 	}
 	db.AutoMigrate(
-		&database.User{})
+		&database.User{},
+		&database.Iqra{},
+		&database.Submission{})
 	log.Println("db successfully connected")
 
 	return db, nil
@@ -59,7 +61,7 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/create", con.CreateUserHandler).Methods("POST")
 	router.HandleFunc("/login", con.LoginHandler).Methods("POST")
 	router.HandleFunc("/token/refresh", con.Refresh).Methods("POST")
-	//router.HandleFunc("/submission", con.UploadFileHandler).Methods("POST")
+	router.HandleFunc("/submission", con.UploadFileHandler).Methods("POST")
 	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
 
@@ -71,36 +73,28 @@ type Connection struct {
 }
 type User struct {
 	gorm.Model
-	Id       		uint64 `json:"id" gorm:"primary_key"`
+	Id		       	uint64 `json:"id" gorm:"primaryKey"`
 	Username 		string `json:"username"`
 	Email    		string `json:"email"`
 	Password 		string `json:"password"`
 }
 type Iqra struct {
 	gorm.Model
-	Id				uint64	`json:"id" gorm:"primary_key"`
-	File_url 		string	`json:"file_url"`
-	File_type 		string	`json:"file_type"`
-	File_label		string	`json:"file_label"`
+	Id				uint64	`json:"id" gorm:"primaryKey"`
+	Jilid	 		string	`json:"jilid"`
+	Halaman			string	`json:"halaman"`
+	Section			string	`json:"section"`
+	File_iqra 		string	`json:"file_name"`
 }
 type Submission struct {
 	gorm.Model
-	Id              uint64  `json:"id" gorm:"primary_key"`
-	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreign_key"`
-	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreign_key"`
-	Id_file_refer   uint64  `json:"Id_file_refer" gorm:"foreign_key"`
+	Id			    uint64  `json:"id" gorm:"primaryKey"`
+	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreignKey:Id_user"`
+	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
 	Accuracy        float64 `json:"accuracy"`
 	Confidence      float64 `json:"confidence"`
 	Actual_result   string  `json:"actual_result"`
 	Expected_result string  `json:"expected_result"`
-}
-type Todo struct {
-	UserID uint64 `json:"user_id"`
-	Title string `json:"title"`
-}
-type AccessDetails struct {
-	AccessUuid string
-	UserId   uint64
 }
 
 func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -269,6 +263,34 @@ func (con *Connection) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	return
+}
+
+func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
+	//ambil data rekaman untuk validasi
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err.Error())
+	}
+	var user database.User
+	json.Unmarshal(body, &user)
+
+	//ambil data audio
+	//parse multiparty?
+
+
+	//validasi dan response
+	if _, err, id := database.Validate(user.Id, con.db); err != nil {
+		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
+		return
+	} else {
+		err, resultData := database.UploadFile(id, user, con.db)
+		if err != nil {
+			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
+			return
+		} else {
+			WrapAPIData(w, r, resultData, http.StatusOK, "data updated")
+		}
+	}
 }
 
 func main() {

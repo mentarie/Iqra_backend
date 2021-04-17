@@ -18,24 +18,24 @@ var err error
 
 type User struct {
 	gorm.Model
-	Id       		uint64 `json:"id" gorm:"primary_key"`
+	Id		       	uint64 `json:"id" gorm:"primaryKey"`
 	Username 		string `json:"username"`
 	Email    		string `json:"email"`
 	Password 		string `json:"password"`
 }
 type Iqra struct {
 	gorm.Model
-	Id 		 		uint64	`json:"id" gorm:"primary_key"`
-	File_url 		string	`json:"file_url"`
-	File_type 		string	`json:"file_type"`
-	File_label		string	`json:"file_label"`
+	Id				uint64	`json:"id" gorm:"primaryKey"`
+	Jilid	 		string	`json:"jilid"`
+	Halaman			string	`json:"halaman"`
+	Section			string	`json:"section"`
+	File_iqra		string	`json:"file_name"`
 }
 type Submission struct {
 	gorm.Model
-	Id              uint64  `json:"id" gorm:"primary_key"`
-	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreign_key"`
-	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreign_key"`
-	Id_file_refer   uint64  `json:"Id_file_refer" gorm:"foreign_key"`
+	Id			    uint64  `json:"id" gorm:"primaryKey"`
+	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreignKey:Id_user"`
+	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
 	Accuracy        float64 `json:"accuracy"`
 	Confidence      float64 `json:"confidence"`
 	Actual_result   string  `json:"actual_result"`
@@ -108,6 +108,16 @@ func DeleteUser(id uint64, db *gorm.DB) error {
 	return nil
 }
 
+func UploadFile(id uint64, user User, db *gorm.DB) (error, Submission) {
+	var submission Submission
+	if err := db.Model(&User{}).Where(&Submission{
+		Id_user_refer : id,
+	}).Updates(&user).Error; err != nil {
+		return err, submission
+	}
+	return err, submission
+}
+
 //Validate user detail
 func Validate(id uint64, db *gorm.DB) (bool, error, uint64) {
 	//data yang dipake buat validasi
@@ -123,7 +133,7 @@ func Validate(id uint64, db *gorm.DB) (bool, error, uint64) {
 	} else {
 		status = true
 		//log.Println(status)
-		//log.Println(uservalidation.Id)
+		log.Println(uservalidation.Id)
 	}
 	//nilai apa yang mau dikembalikan
 	return status, nil, uservalidation.Id
