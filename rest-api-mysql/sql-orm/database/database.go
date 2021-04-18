@@ -29,13 +29,13 @@ type Iqra struct {
 	Jilid	 		string	`json:"jilid"`
 	Halaman			string	`json:"halaman"`
 	Section			string	`json:"section"`
-	File_iqra		string	`json:"file_name"`
+	File_iqra		string	`json:"file_iqra"`
 }
 type Submission struct {
 	gorm.Model
 	Id			    uint64  `json:"id" gorm:"primaryKey"`
 	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreignKey:Id_user"`
-	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
+	Id_iqra_refer   string  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
 	Accuracy        float64 `json:"accuracy"`
 	Confidence      float64 `json:"confidence"`
 	Actual_result   string  `json:"actual_result"`
@@ -88,8 +88,6 @@ func UpdateUser(id uint64, user User, db *gorm.DB) (error, error, User) {
 	}).Updates(&user).Error; err != nil {
 		return err, nil, user
 	}
-	//log.Println(id)
-	//log.Println(user)
 	return nil, nil, user
 }
 
@@ -100,8 +98,6 @@ func DeleteUser(id uint64, db *gorm.DB) error {
 	}).Find(&user).Error; err != nil {
 		return err
 	}
-	//log.Println(user)
-	//log.Println(username)
 	if err := db.Delete(&user).Error; err != nil {
 		return err
 	}
@@ -110,7 +106,7 @@ func DeleteUser(id uint64, db *gorm.DB) error {
 
 func UploadFile(id uint64, user User, db *gorm.DB) (error, Submission) {
 	var submission Submission
-	if err := db.Model(&User{}).Where(&Submission{
+	if err := db.Model(&Submission{}).Where(&Submission{
 		Id_user_refer : id,
 	}).Updates(&user).Error; err != nil {
 		return err, submission

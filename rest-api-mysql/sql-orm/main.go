@@ -7,6 +7,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/h2non/filetype"
 	"github.com/mentarie/Iqra_backend/rest-api-mysql/sql-orm/config"
 	"github.com/mentarie/Iqra_backend/rest-api-mysql/sql-orm/database"
 	"github.com/spf13/viper"
@@ -16,7 +17,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	_ "mime"
 )
 
 var db *sql.DB
@@ -84,13 +87,13 @@ type Iqra struct {
 	Jilid	 		string	`json:"jilid"`
 	Halaman			string	`json:"halaman"`
 	Section			string	`json:"section"`
-	File_iqra 		string	`json:"file_name"`
+	File_iqra 		string	`json:"file_iqra"`
 }
 type Submission struct {
 	gorm.Model
 	Id			    uint64  `json:"id" gorm:"primaryKey"`
 	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreignKey:Id_user"`
-	Id_iqra_refer   uint64  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
+	Id_iqra_refer   string  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
 	Accuracy        float64 `json:"accuracy"`
 	Confidence      float64 `json:"confidence"`
 	Actual_result   string  `json:"actual_result"`
@@ -266,31 +269,73 @@ func (con *Connection) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
-	//ambil data rekaman untuk validasi
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err.Error())
-	}
-	var user database.User
-	json.Unmarshal(body, &user)
+	//upload size and path
+	const maxUploadSize = 1 * 1024 * 1024 // 1 mb
+	const uploadPath = "./spectrograms"
 
-	//ambil data audio
-	//parse multiparty?
-
-
-	//validasi dan response
-	if _, err, id := database.Validate(user.Id, con.db); err != nil {
-		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
+	if r.Method != "POST" {
+		WrapAPIError(w,r,"Bad request method", http.StatusBadRequest)
 		return
-	} else {
-		err, resultData := database.UploadFile(id, user, con.db)
-		if err != nil {
-			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
-			return
-		} else {
-			WrapAPIData(w, r, resultData, http.StatusOK, "data updated")
-		}
 	}
+
+	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+		fmt.Printf("Could not parse multipart form: %v\n", err)
+		WrapAPIError(w,r,"unable to parse form", http.StatusInternalServerError)
+		return
+	}
+
+	// parse and validate file and post parameters
+	file, fileHeader, err := r.FormFile("iqra-file-rekaman")
+	if err != nil {
+		WrapAPIError(w,r,"invalid file form key", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	fileSize := fileHeader.Size
+	fmt.Printf("File size (bytes): %v\n", fileSize)
+	if fileSize > maxUploadSize {
+		WrapAPIError(w,r,"max file size is 1 MB",http.StatusBadRequest)
+		return
+	}
+
+	fileBytes, err := ioutil.ReadAll(file)
+	kind, _ := filetype.Match(fileBytes)
+	if kind == filetype.Unknown {
+		WrapAPIError(w,r,"unknown file type" + kind.MIME.Value, http.StatusBadRequest)
+		return
+	}
+
+	fmt.Printf("File type: %s. MIME: %s\n", kind.Extension, kind.MIME.Value)
+	if err != nil {
+		WrapAPIError(w,r,"invalid file reading",http.StatusBadRequest)
+		return
+	}
+
+	switch kind.MIME.Value {
+	case "audio/mpeg":
+		break
+	default:
+		WrapAPIError(w,r,"wrong file type : " + kind.MIME.Value, http.StatusBadRequest)
+		return
+	}
+
+	fileName := "jilid1_ebta_1"
+	newPath := filepath.Join(uploadPath, fileName+"."+kind.Extension)
+	// write file
+	newFile, err := os.Create(newPath)
+	if err != nil {
+		WrapAPIError(w,r,"error writing file", http.StatusInternalServerError)
+		return
+	}
+	defer newFile.Close()
+
+	if _, err := newFile.Write(fileBytes); err != nil || newFile.Close() != nil {
+		WrapAPIError(w,r,"error writing file", http.StatusInternalServerError)
+		return
+	}
+	WrapAPISuccess(w,r,"success uploading file",http.StatusOK)
+
 }
 
 func main() {
