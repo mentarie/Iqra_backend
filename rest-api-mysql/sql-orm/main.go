@@ -15,11 +15,13 @@ import (
 	"gorm.io/gorm"
 	"io/ioutil"
 	"log"
+	_ "mime"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
-	_ "mime"
+	"strings"
 )
 
 var db *sql.DB
@@ -313,15 +315,28 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	switch kind.MIME.Value {
-	case "audio/mpeg":
+	case "video/3gpp":
 		break
 	default:
 		WrapAPIError(w,r,"wrong file type : " + kind.MIME.Value, http.StatusBadRequest)
 		return
 	}
 
-	fileName := "jilid1_ebta_1"
-	newPath := filepath.Join(uploadPath, fileName+"."+kind.Extension)
+	fileName := fileHeader.Filename
+	newPath := filepath.Join(uploadPath, fileName)
+
+	//split file name
+	s := strings.Split(fileHeader.Filename, ".")
+	name, fileType := s[0], s[1]
+	fmt.Println(name,fileType)
+
+	//directory name
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(dir)
+
 	// write file
 	newFile, err := os.Create(newPath)
 	if err != nil {
@@ -336,6 +351,56 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	}
 	WrapAPISuccess(w,r,"success uploading file",http.StatusOK)
 
+	//convert .3gp to .mp3
+	mp3_prg := "ffmpeg"
+	mp3_arg1 := "-i"
+	mp3_arg2 := dir+"/spectrograms/"+fileHeader.Filename //susuaikan nama file yg dah ada
+	mp3_arg3 := "-c:a"
+	mp3_arg4 := "libmp3lame"
+	mp3_arg5 := dir+"/spectrograms/"+name+".mp3" //sesuaikan nama file yg akan disimpan
+
+	mp3_cmd := exec.Command(mp3_prg,mp3_arg1,mp3_arg2,mp3_arg3,mp3_arg4,mp3_arg5)
+	mp3_stdout, err := mp3_cmd.Output()
+	log.Println(mp3_cmd)
+
+	if err != nil {
+		fmt.Println("ERROR CONVERT MP3 : " + err.Error())
+		return
+	}
+	fmt.Println(string(mp3_stdout))
+
+	//convert .mp3 to .jpg
+	jpg_prg := "ffmpeg"
+	jpg_arg1 := "-i"
+	jpg_arg2 := dir+"/spectrograms/"+name+".mp3" //susuaikan nama file yg dah ada
+	jpg_arg3 := "-lavfi"
+	jpg_arg4 := "showspectrumpic=s=1024x512:legend=disabled"
+	jpg_arg5 := dir+"/spectrograms/"+name+".jpg" //sesuaikan nama file yg akan disimpan
+
+	jpg_cmd := exec.Command(jpg_prg,jpg_arg1,jpg_arg2,jpg_arg3,jpg_arg4,jpg_arg5)
+	jpg_stdout, err := jpg_cmd.Output()
+
+	if err != nil {
+		fmt.Println("ERROR CONVERT JPG : " + err.Error())
+		return
+	}
+	fmt.Println(string(jpg_stdout))
+
+	//remove file .mp3 & .3gp
+	rm := "rm"
+	rm2 := dir+"/spectrograms/"+name+".3gp"
+	rm3 := "|"
+	rm4 := "rm"
+	rm5 := dir+"/spectrograms/"+name+".mp3"
+
+	rm_cmd := exec.Command(rm,rm2,rm3,rm4,rm5)
+	rm_stdout, err := rm_cmd.Output()
+
+	if err != nil {
+		fmt.Println("ERROR REMOVE FILE : " + err.Error())
+		return
+	}
+	fmt.Println(string(rm_stdout))
 }
 
 func main() {
