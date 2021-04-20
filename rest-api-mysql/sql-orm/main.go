@@ -386,21 +386,31 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	}
 	fmt.Println(string(jpg_stdout))
 
-	//remove file .mp3 & .3gp
-	rm := "rm"
-	rm2 := dir+"/spectrograms/"+name+".3gp"
-	rm3 := "|"
-	rm4 := "rm"
-	rm5 := dir+"/spectrograms/"+name+".mp3"
+	//remove file .3gp
+	rm_3gp := "rm"
+	rm2_3gp := dir+"/spectrograms/"+name+".3gp"
 
-	rm_cmd := exec.Command(rm,rm2,rm3,rm4,rm5)
-	rm_stdout, err := rm_cmd.Output()
+	rm_cmd_3gp := exec.Command(rm_3gp,rm2_3gp)
+	rm_stdout_3gp, err := rm_cmd_3gp.Output()
 
 	if err != nil {
 		fmt.Println("ERROR REMOVE FILE : " + err.Error())
 		return
 	}
-	fmt.Println(string(rm_stdout))
+	fmt.Println(string(rm_stdout_3gp))
+
+	//remove file .mp3
+	rm_mp3 := "rm"
+	rm2_mp3 := dir+"/spectrograms/"+name+".mp3"
+
+	rm_cmd_mp3 := exec.Command(rm_mp3,rm2_mp3)
+	rm_stdout_mp3, err := rm_cmd_mp3.Output()
+
+	if err != nil {
+		fmt.Println("ERROR REMOVE FILE : " + err.Error())
+		return
+	}
+	fmt.Println(string(rm_stdout_mp3))
 }
 
 func main() {
