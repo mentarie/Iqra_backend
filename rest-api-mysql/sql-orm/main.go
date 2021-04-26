@@ -411,6 +411,18 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	fmt.Println(string(rm_stdout_mp3))
+
+	//save path
+	final_file_path := dir+"/spectrograms/"+name+".jpg"
+	fmt.Println(final_file_path)
+
+	//kirim data dan get response dari GCP AUtoML
+	if _, err := VisionClassificationPredict(final_file_path); err != nil {
+		log.Println("Error getting user data ", err.Error())
+		return
+	} else {
+		//WrapAPIData(w, r, result, http.StatusOK, "success")
+	}
 }
 
 func main() {

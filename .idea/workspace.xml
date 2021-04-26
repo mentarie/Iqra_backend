@@ -20,7 +20,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8d6e3aed-0c9b-4bef-ba17-f20a3b59e002" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/analog-delight-311114-8ecbb65a913e.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/automl.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/go.mod" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/database/database.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/sql-orm" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/sql-orm" afterDir="false" />
     </list>
@@ -128,11 +133,6 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/rest-api-mysql/sql-orm/database/database.go</url>
-          <line>106</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go</url>
           <line>272</line>

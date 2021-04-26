@@ -239,4 +239,3 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
