@@ -349,7 +349,7 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 		WrapAPIError(w,r,"error writing file", http.StatusInternalServerError)
 		return
 	}
-	WrapAPISuccess(w,r,"success uploading file",http.StatusOK)
+	//WrapAPISuccess(w,r,"success uploading file",http.StatusOK)
 
 	//convert .3gp to .mp3
 	mp3_prg := "ffmpeg"
@@ -417,11 +417,11 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	fmt.Println(final_file_path)
 
 	//kirim data dan get response dari GCP AUtoML
-	if _, err := VisionClassificationPredict(final_file_path); err != nil {
+	if hasil, err := VisionClassificationPredict(final_file_path); err != nil {
 		log.Println("Error getting user data ", err.Error())
 		return
 	} else {
-		//WrapAPIData(w, r, result, http.StatusOK, "success")
+		WrapAPIData(w, r, hasil, http.StatusOK, "success")
 	}
 }
 

@@ -1,19 +1,17 @@
 package main
 
 import (
+	automl "cloud.google.com/go/automl/apiv1"
 	"context"
 	"fmt"
+	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
 	"io/ioutil"
-	"log"
 	"os"
 	"sort"
-
-	automl "cloud.google.com/go/automl/apiv1"
-	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
 )
 
 // visionClassificationPredict does a prediction for image classification.
-func VisionClassificationPredict(final_file_path string) (error, error) {
+func VisionClassificationPredict(final_file_path string) (float32, error) {
 	projectID := "analog-delight-311114"
 	location := "us-central1"
 	modelID := "ICN7289082593968914432"
@@ -22,18 +20,18 @@ func VisionClassificationPredict(final_file_path string) (error, error) {
 	ctx := context.Background()
 	client, err := automl.NewPredictionClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewPredictionClient: %v", err), nil
+		return 0, fmt.Errorf("NewPredictionClient: %v", err)
 	}
 	defer client.Close()
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("Open: %v", err), nil
+		return 0, fmt.Errorf("Open: %v", err)
 	}
 	defer file.Close()
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return fmt.Errorf("ReadAll: %v", err), nil
+		return 0, fmt.Errorf("ReadAll: %v", err)
 	}
 
 	req := &automlpb.PredictRequest{
@@ -56,30 +54,19 @@ func VisionClassificationPredict(final_file_path string) (error, error) {
 
 	resp, err := client.Predict(ctx, req)
 	if err != nil {
-		return fmt.Errorf("Predict: %v", err), nil
+		return 0, fmt.Errorf("Predict: %v", err)
 	}
 
 	for _, payload := range resp.GetPayload() {
 		fmt.Printf("Predicted class name: %v\n", payload.GetDisplayName())
-		//fmt.Printf("Predicted class score: %v\n", payload.GetClassification().GetScore())
+		fmt.Printf("Predicted class score: %v\n", payload.GetClassification().GetScore())
 	}
 
-	sort.Slice(resp.GetPayload(), func(i, j int) bool {
-		a := resp.GetPayload()[i].Detail
-		b := resp.GetPayload()[j].Detail
-		log.Println(a)
-		log.Println(b)
-
-
-		return false
+	m := resp.GetPayload()
+	sort.Slice(m, func(i, j int) bool {
+		return m[i].GetClassification().Score > m[j].GetClassification().Score
 	})
+	hasil := m[0].GetClassification().Score
 
-	//sort.Slice(a, func(i, j int) bool {
-	//	return a[i] > a[j]
-	//})
-	//for _, v := range a{
-	//	fmt.Println(v)
-	//}
-
-	return nil, nil
+	return hasil, nil
 }
