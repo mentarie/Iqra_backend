@@ -11,7 +11,7 @@ import (
 )
 
 // visionClassificationPredict does a prediction for image classification.
-func VisionClassificationPredict(final_file_path string) (float32, error) {
+func VisionClassificationPredict(final_file_path string) (float32, string, error) {
 	projectID := "analog-delight-311114"
 	location := "us-central1"
 	modelID := "ICN7289082593968914432"
@@ -20,18 +20,18 @@ func VisionClassificationPredict(final_file_path string) (float32, error) {
 	ctx := context.Background()
 	client, err := automl.NewPredictionClient(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("NewPredictionClient: %v", err)
+		return 0, "", fmt.Errorf("NewPredictionClient: %v", err)
 	}
 	defer client.Close()
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return 0, fmt.Errorf("Open: %v", err)
+		return 0, "", fmt.Errorf("Open: %v", err)
 	}
 	defer file.Close()
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return 0, fmt.Errorf("ReadAll: %v", err)
+		return 0, "", fmt.Errorf("ReadAll: %v", err)
 	}
 
 	req := &automlpb.PredictRequest{
@@ -54,7 +54,7 @@ func VisionClassificationPredict(final_file_path string) (float32, error) {
 
 	resp, err := client.Predict(ctx, req)
 	if err != nil {
-		return 0, fmt.Errorf("Predict: %v", err)
+		return 0, "", fmt.Errorf("Predict: %v", err)
 	}
 
 	for _, payload := range resp.GetPayload() {
@@ -62,11 +62,13 @@ func VisionClassificationPredict(final_file_path string) (float32, error) {
 		fmt.Printf("Predicted class score: %v\n", payload.GetClassification().GetScore())
 	}
 
+	//hasil score
 	m := resp.GetPayload()
 	sort.Slice(m, func(i, j int) bool {
 		return m[i].GetClassification().Score > m[j].GetClassification().Score
 	})
 	hasil := m[0].GetClassification().Score
+	name := m[0].DisplayName
 
-	return hasil, nil
+	return hasil, name, nil
 }

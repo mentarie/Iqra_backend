@@ -34,10 +34,9 @@ type Iqra struct {
 type Submission struct {
 	gorm.Model
 	Id			    uint64  `json:"id" gorm:"primaryKey"`
-	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreignKey:Id_user"`
-	Id_iqra_refer   string  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
-	Accuracy        float64 `json:"accuracy"`
-	Confidence      float64 `json:"confidence"`
+	Id_user_refer   uint64  `json:"id_user_refer"`
+	Id_iqra_refer   uint64  `json:"id_iqra_refer"`
+	Accuracy        float32 `json:"accuracy"`
 	Actual_result   string  `json:"actual_result"`
 	Expected_result string  `json:"expected_result"`
 }
@@ -104,14 +103,28 @@ func DeleteUser(id uint64, db *gorm.DB) error {
 	return nil
 }
 
-func UploadFile(id uint64, user User, db *gorm.DB) (error, Submission) {
-	var submission Submission
-	if err := db.Model(&Submission{}).Where(&Submission{
-		Id_user_refer : id,
-	}).Updates(&user).Error; err != nil {
-		return err, submission
+func GetIqra(recordFileName string, db *gorm.DB) (uint64, error) {
+	var iqra Iqra
+	var status bool
+
+	if err := db.Where(&Iqra{
+		File_iqra: recordFileName,
+	}).First(&iqra).Error; err != nil {
+		log.Println("failed to get data :", err.Error())
+		return 0, err
+	} else {
+		status = true
+		log.Println(status)
 	}
-	return err, submission
+	return iqra.Id, err
+}
+
+func SaveSubmission(submission Submission, db *gorm.DB) error {
+	if err := db.Create(&submission).Error; err != nil {
+		return err
+	}
+	log.Println("Success insert data")
+	return nil
 }
 
 //Validate user detail

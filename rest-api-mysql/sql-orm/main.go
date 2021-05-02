@@ -94,10 +94,9 @@ type Iqra struct {
 type Submission struct {
 	gorm.Model
 	Id			    uint64  `json:"id" gorm:"primaryKey"`
-	Id_user_refer   uint64  `json:"id_user_refer" gorm:"foreignKey:Id_user"`
-	Id_iqra_refer   string  `json:"id_iqra_refer" gorm:"foreignKey:File_iqra"`
-	Accuracy        float64 `json:"accuracy"`
-	Confidence      float64 `json:"confidence"`
+	Id_user_refer   uint64  `json:"id_user_refer"`
+	Id_iqra_refer   uint64  `json:"id_iqra_refer"`
+	Accuracy        float32 `json:"accuracy"`
 	Actual_result   string  `json:"actual_result"`
 	Expected_result string  `json:"expected_result"`
 }
@@ -115,8 +114,6 @@ func (con *Connection) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
-		//log.Println(database.ValidateLogin(user, con.db))
-		//log.Println(id)
 		userData, err := database.GetUser(id, con.db)
 		if err!= nil{
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
@@ -257,8 +254,6 @@ func (con *Connection) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
-		//log.Println(database.Validate(user, con.db))
-		//log.Println(user.Username)
 		err := database.DeleteUser(id, con.db)
 		if err != nil {
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
@@ -325,10 +320,15 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	fileName := fileHeader.Filename
 	newPath := filepath.Join(uploadPath, fileName)
 
-	//split file name
+	//split file name untuk dapat type
 	s := strings.Split(fileHeader.Filename, ".")
-	name, fileType := s[0], s[1]
-	fmt.Println(name,fileType)
+	fileType := s[1]
+	fmt.Println(fileType)
+
+	//split file name untuk dapat userid
+	beforeSplitNama := s[0]
+	sn := strings.Split(beforeSplitNama, "-")
+	userId, recordFileName := sn[0], sn[1]
 
 	//directory name
 	dir, err := os.Getwd()
@@ -357,7 +357,7 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	mp3_arg2 := dir+"/spectrograms/"+fileHeader.Filename //susuaikan nama file yg dah ada
 	mp3_arg3 := "-c:a"
 	mp3_arg4 := "libmp3lame"
-	mp3_arg5 := dir+"/spectrograms/"+name+".mp3" //sesuaikan nama file yg akan disimpan
+	mp3_arg5 := dir+"/spectrograms/"+recordFileName+".mp3" //sesuaikan nama file yg akan disimpan
 
 	mp3_cmd := exec.Command(mp3_prg,mp3_arg1,mp3_arg2,mp3_arg3,mp3_arg4,mp3_arg5)
 	mp3_stdout, err := mp3_cmd.Output()
@@ -372,10 +372,10 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	//convert .mp3 to .jpg
 	jpg_prg := "ffmpeg"
 	jpg_arg1 := "-i"
-	jpg_arg2 := dir+"/spectrograms/"+name+".mp3" //susuaikan nama file yg dah ada
+	jpg_arg2 := dir+"/spectrograms/"+recordFileName+".mp3" //susuaikan nama file yg dah ada
 	jpg_arg3 := "-lavfi"
 	jpg_arg4 := "showspectrumpic=s=1024x512:legend=disabled"
-	jpg_arg5 := dir+"/spectrograms/"+name+".jpg" //sesuaikan nama file yg akan disimpan
+	jpg_arg5 := dir+"/spectrograms/"+recordFileName+".jpg" //sesuaikan nama file yg akan disimpan
 
 	jpg_cmd := exec.Command(jpg_prg,jpg_arg1,jpg_arg2,jpg_arg3,jpg_arg4,jpg_arg5)
 	jpg_stdout, err := jpg_cmd.Output()
@@ -388,41 +388,88 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 
 	//remove file .3gp
 	rm_3gp := "rm"
-	rm2_3gp := dir+"/spectrograms/"+name+".3gp"
+	rm2_3gp := dir+"/spectrograms/"+beforeSplitNama+".3gp"
+	fmt.Println(rm2_3gp)
 
 	rm_cmd_3gp := exec.Command(rm_3gp,rm2_3gp)
 	rm_stdout_3gp, err := rm_cmd_3gp.Output()
 
 	if err != nil {
-		fmt.Println("ERROR REMOVE FILE : " + err.Error())
+		fmt.Println("ERROR REMOVE FILE 3GP : " + err.Error())
 		return
 	}
 	fmt.Println(string(rm_stdout_3gp))
 
 	//remove file .mp3
 	rm_mp3 := "rm"
-	rm2_mp3 := dir+"/spectrograms/"+name+".mp3"
+	rm2_mp3 := dir+"/spectrograms/"+recordFileName+".mp3"
 
 	rm_cmd_mp3 := exec.Command(rm_mp3,rm2_mp3)
 	rm_stdout_mp3, err := rm_cmd_mp3.Output()
 
 	if err != nil {
-		fmt.Println("ERROR REMOVE FILE : " + err.Error())
+		fmt.Println("ERROR REMOVE FILE MP3 : " + err.Error())
 		return
 	}
 	fmt.Println(string(rm_stdout_mp3))
 
 	//save path
-	final_file_path := dir+"/spectrograms/"+name+".jpg"
+	final_file_path := dir+"/spectrograms/"+recordFileName+".jpg"
 	fmt.Println(final_file_path)
 
 	//kirim data dan get response dari GCP AUtoML
-	if hasil, err := VisionClassificationPredict(final_file_path); err != nil {
+	if score, resultnama, err := VisionClassificationPredict(final_file_path); err != nil {
 		log.Println("Error getting user data ", err.Error())
 		return
 	} else {
-		WrapAPIData(w, r, hasil, http.StatusOK, "success")
+		//convert id user
+		s := userId
+		id_user_refer, err := strconv.ParseUint(s, 10, 64)
+		if err == nil {
+			fmt.Printf("%d of type %T", id_user_refer, id_user_refer)
+		}
+
+		//ambil data id iqra
+		iqraData, err := database.GetIqra(recordFileName, con.db)
+		if err!= nil{
+			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
+			return
+		}
+
+		//isi submisi
+		var hasil database.Submission
+		hasil.Id_user_refer = id_user_refer
+		hasil.Id_iqra_refer = iqraData
+		hasil.Accuracy = score
+		hasil.Actual_result = resultnama
+		hasil.Expected_result = recordFileName
+
+		//save ke tabel submission
+		if err := database.SaveSubmission(hasil, con.db); err != nil {
+			WrapAPIError(w, r, fmt.Sprintf("Error while save submission data : ", err.Error()), http.StatusBadRequest)
+		} else {
+			WrapAPISuccess(w, r, "success", http.StatusOK)
+		}
+
+		//
+
+		//kirim hasil ke android
+		WrapAPIData(w, r, score, http.StatusOK, "success")
+
+		//delete gambar spectrogramnya
+		rm_jpg := "rm"
+		rm2_jpg := dir+"/spectrograms/"+recordFileName+".jpg"
+
+		rm_cmd_jpg := exec.Command(rm_jpg,rm2_jpg)
+		rm_stdout_jpg, err := rm_cmd_jpg.Output()
+
+		if err != nil {
+			fmt.Println("ERROR REMOVE FILE JPG : " + err.Error())
+			return
+		}
+		fmt.Println(string(rm_stdout_jpg))
 	}
+
 }
 
 func main() {
