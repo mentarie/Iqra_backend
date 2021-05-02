@@ -154,13 +154,17 @@ func UpdateSubmission(submission Submission, db *gorm.DB) (Submission,error) {
 	return submission,err
 }
 
-func GetSubmissions(db *gorm.DB) ([]Submission, error) {
+func GetSubmissions(id uint64, db *gorm.DB) ([]Submission, error) {
 	var submissions []Submission
-	if err := db.Find(&submissions).Error; err != nil {
+
+	if err := db.Where(&Submission{
+		Id_user_refer: id,
+	}).First(&submissions).Error; err != nil {
 		log.Println("failed to get data :", err.Error())
-		return nil, err
+		return submissions, err
 	}
-	return submissions, nil
+
+	return submissions, err
 }
 
 //Validate user detail

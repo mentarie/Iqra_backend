@@ -67,7 +67,7 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/login", con.LoginHandler).Methods("POST")
 	router.HandleFunc("/token/refresh", con.Refresh).Methods("POST")
 	router.HandleFunc("/submission", con.UploadFileHandler).Methods("POST")
-	router.HandleFunc("/submissions", con.GetSubmissionsHandler).Methods("GET")
+	router.HandleFunc("/submissions/{id}", con.GetSubmissionsHandler).Methods("GET")
 	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
 
@@ -480,7 +480,16 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (con *Connection) GetSubmissionsHandler(w http.ResponseWriter, r *http.Request) {
-	if userSubmission, err := database.GetSubmissions(con.db); err != nil {
+	params := mux.Vars(r)
+	id := params["id"]
+	//convert id user
+	s := id
+	id_user, err := strconv.ParseUint(s, 10, 64)
+	if err == nil {
+		fmt.Printf("%d of type %T", id_user, id_user)
+	}
+
+	if userSubmission, err := database.GetSubmissions(id_user, con.db); err != nil {
 		log.Println("Error getting user's submission data ", err.Error())
 		return
 	} else {

@@ -20,7 +20,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8d6e3aed-0c9b-4bef-ba17-f20a3b59e002" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/database/database.go" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/database/database.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/sql-orm" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/sql-orm" afterDir="false" />
