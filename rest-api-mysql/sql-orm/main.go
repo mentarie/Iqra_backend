@@ -67,6 +67,7 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/login", con.LoginHandler).Methods("POST")
 	router.HandleFunc("/token/refresh", con.Refresh).Methods("POST")
 	router.HandleFunc("/submission", con.UploadFileHandler).Methods("POST")
+	router.HandleFunc("/submissions", con.GetSubmissionsHandler).Methods("GET")
 	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
 
@@ -444,17 +445,24 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 		hasil.Actual_result = resultnama
 		hasil.Expected_result = recordFileName
 
-		//save ke tabel submission
-		if err := database.SaveSubmission(hasil, con.db); err != nil {
-			WrapAPIError(w, r, fmt.Sprintf("Error while save submission data : ", err.Error()), http.StatusBadRequest)
+		//validate sebelum save data
+		if _, err := database.ValidateDataSubmission(id_user_refer, iqraData, con.db); err != nil {
+			//save ke tabel submission
+			if userData, err := database.SaveSubmission(hasil, con.db); err != nil {
+				WrapAPIError(w, r, fmt.Sprintf("Error while save submission data : ", err.Error()), http.StatusBadRequest)
+			} else {
+				log.Println(userData)
+				WrapAPIData(w, r, userData, http.StatusOK, "data saved")
+			}
 		} else {
-			WrapAPISuccess(w, r, "success", http.StatusOK)
+			//update data jika sudah ada
+			if userData, err := database.UpdateSubmission(hasil, con.db); err != nil {
+				WrapAPIError(w, r, fmt.Sprintf("Error while save submission data : ", err.Error()), http.StatusBadRequest)
+			} else {
+				log.Println(userData)
+				WrapAPIData(w, r, userData, http.StatusOK, "data updated")
+			}
 		}
-
-		//
-
-		//kirim hasil ke android
-		WrapAPIData(w, r, score, http.StatusOK, "success")
 
 		//delete gambar spectrogramnya
 		rm_jpg := "rm"
@@ -469,7 +477,15 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 		}
 		fmt.Println(string(rm_stdout_jpg))
 	}
+}
 
+func (con *Connection) GetSubmissionsHandler(w http.ResponseWriter, r *http.Request) {
+	if userSubmission, err := database.GetSubmissions(con.db); err != nil {
+		log.Println("Error getting user's submission data ", err.Error())
+		return
+	} else {
+		WrapAPIData(w, r, userSubmission, http.StatusOK, "success")
+	}
 }
 
 func main() {

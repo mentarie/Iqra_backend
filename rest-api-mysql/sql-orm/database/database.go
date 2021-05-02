@@ -119,12 +119,48 @@ func GetIqra(recordFileName string, db *gorm.DB) (uint64, error) {
 	return iqra.Id, err
 }
 
-func SaveSubmission(submission Submission, db *gorm.DB) error {
-	if err := db.Create(&submission).Error; err != nil {
-		return err
+func ValidateDataSubmission(Id_user_refer uint64, Id_iqra_refer uint64, db *gorm.DB) (bool, error) {
+	//data yang dipake buat validasi
+	var submission Submission
+	var status bool
+
+	if err := db.Where(&Submission{
+		Id_user_refer: Id_user_refer,
+		Id_iqra_refer: Id_iqra_refer,
+	}).First(&submission).Error; err != nil {
+		log.Println("failed to get data :", err.Error())
+		return false, err
+	} else {
+		status = true
 	}
-	log.Println("Success insert data")
-	return nil
+
+	return status, err
+}
+
+func SaveSubmission(submission Submission, db *gorm.DB) (Submission, error) {
+	if err := db.Create(&submission).Error; err != nil {
+		return submission, err
+	}
+	return submission, nil
+}
+
+func UpdateSubmission(submission Submission, db *gorm.DB) (Submission,error) {
+	if err := db.Model(&Submission{}).Where(&Submission{
+		Id_user_refer: submission.Id_user_refer,
+		Id_iqra_refer: submission.Id_iqra_refer,
+	}).Updates(&submission).Error; err != nil {
+		return submission, err
+	}
+	return submission,err
+}
+
+func GetSubmissions(db *gorm.DB) ([]Submission, error) {
+	var submissions []Submission
+	if err := db.Find(&submissions).Error; err != nil {
+		log.Println("failed to get data :", err.Error())
+		return nil, err
+	}
+	return submissions, nil
 }
 
 //Validate user detail
