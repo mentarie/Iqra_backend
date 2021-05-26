@@ -36,7 +36,7 @@ type Submission struct {
 	Id			    uint64  `json:"id" gorm:"primaryKey"`
 	Id_user_refer   uint64  `json:"id_user_refer"`
 	Id_iqra_refer   uint64  `json:"id_iqra_refer"`
-	Accuracy        float32 `json:"accuracy"`
+	Accuracy        float64 `json:"accuracy"`
 	Actual_result   string  `json:"actual_result"`
 	Expected_result string  `json:"expected_result"`
 }
@@ -159,7 +159,7 @@ func GetSubmissions(id uint64, db *gorm.DB) ([]Submission, error) {
 
 	if err := db.Where(&Submission{
 		Id_user_refer: id,
-	}).First(&submissions).Error; err != nil {
+	}).Find(&submissions).Error; err != nil {
 		log.Println("failed to get data :", err.Error())
 		return submissions, err
 	}
@@ -194,7 +194,7 @@ func ValidateLogin(user User, db *gorm.DB) (bool, error, uint64) {
 	var uservalidation User
 	var status bool
 
-	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
+	//data dari tabel saat ini bandingin datanya, kalau sudah ada return false, kalo belum ada return true
 	if err := db.Where(&User{
 		Username: user.Username,
 		Password: user.Password,

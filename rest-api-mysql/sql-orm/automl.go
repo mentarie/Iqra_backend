@@ -2,9 +2,9 @@ package main
 
 import (
 	automl "cloud.google.com/go/automl/apiv1"
+	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
 	"context"
 	"fmt"
-	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -12,9 +12,10 @@ import (
 
 // visionClassificationPredict does a prediction for image classification.
 func VisionClassificationPredict(final_file_path string) (float32, string, error) {
-	projectID := "analog-delight-311114"
+	projectID := "stoked-cirrus-314800"
 	location := "us-central1"
-	modelID := "ICN7289082593968914432"
+	modelID := "ICN519398297845104640"
+	//final_file_path = /Users/mac/go/src/github.com/mentarie/Iqra_backend/rest-api-mysql/sql-orm/
 	filePath := final_file_path
 
 	ctx := context.Background()

@@ -20,6 +20,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8d6e3aed-0c9b-4bef-ba17-f20a3b59e002" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/stoked-cirrus-314800-79f61669e5ad.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/analog-delight-311114-8ecbb65a913e.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/automl.go" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/automl.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/database/database.go" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/database/database.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rest-api-mysql/sql-orm/sql-orm" beforeDir="false" afterPath="$PROJECT_DIR$/rest-api-mysql/sql-orm/sql-orm" afterDir="false" />
@@ -47,6 +51,9 @@
       </set>
     </option>
   </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
   <component name="ProjectId" id="1mg3gL7fWQTIca1H4VmvJd6pnyq" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
@@ -61,7 +68,9 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="go.import.settings.migrated" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -94,23 +103,23 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+  </component>
   <component name="WindowStateProjectService">
-    <state x="679" y="120" key="#Inspections" timestamp="1611663396494">
+    <state x="520" y="274" key="#Go_Modules" timestamp="1620214068262">
       <screen x="0" y="23" width="1440" height="823" />
     </state>
-    <state x="679" y="120" key="#Inspections/0.23.1440.823@0.23.1440.823" timestamp="1611663396494" />
-    <state x="619" y="100" width="800" height="717" key="#Intentions" timestamp="1611981483429">
-      <screen x="0" y="23" width="1440" height="823" />
-    </state>
-    <state x="619" y="100" width="800" height="717" key="#Intentions/0.23.1440.823@0.23.1440.823" timestamp="1611981483429" />
+    <state x="520" y="274" key="#Go_Modules/0.23.1440.823/1440.23.1440.877@0.23.1440.823" timestamp="1620214068262" />
     <state x="819" y="243" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1613188496795">
       <screen x="0" y="23" width="1440" height="823" />
     </state>
     <state x="819" y="243" key="#com.intellij.fileTypes.FileTypeChooser/0.23.1440.823@0.23.1440.823" timestamp="1613188496795" />
-    <state x="832" y="157" key="#com.intellij.ide.util.MemberChooser" timestamp="1611985769189">
+    <state x="229" y="73" key="SettingsEditor" timestamp="1621777234731">
       <screen x="0" y="23" width="1440" height="823" />
     </state>
-    <state x="832" y="157" key="#com.intellij.ide.util.MemberChooser/0.23.1440.823@0.23.1440.823" timestamp="1611985769189" />
+    <state x="229" y="73" key="SettingsEditor/0.23.1440.823/1440.23.1440.877@0.23.1440.823" timestamp="1621777234731" />
+    <state x="1669" y="76" key="SettingsEditor/0.23.1440.823/1440.23.1440.877@1440.23.1440.877" timestamp="1620755438111" />
     <state x="338" y="51" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1619450618809">
       <screen x="0" y="23" width="1440" height="823" />
     </state>
@@ -134,8 +143,8 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/rest-api-mysql/sql-orm/main.go</url>
-          <line>268</line>
-          <option name="timeStamp" value="3" />
+          <line>279</line>
+          <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

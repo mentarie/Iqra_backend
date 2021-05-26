@@ -46,7 +46,8 @@ func getConfig() (config.Config, error) {
 }
 
 func initDB(dbConfig config.Database) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s", dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.DbName, dbConfig.Config)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s", dbConfig.User, dbConfig.Password,
+			dbConfig.Host, dbConfig.Port, dbConfig.DbName, dbConfig.Config)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -67,7 +68,7 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/login", con.LoginHandler).Methods("POST")
 	router.HandleFunc("/token/refresh", con.Refresh).Methods("POST")
 	router.HandleFunc("/submission", con.UploadFileHandler).Methods("POST")
-	router.HandleFunc("/submissions/{id}", con.GetSubmissionsHandler).Methods("GET")
+	router.HandleFunc("/submissions/{id_user_refer}", con.GetSubmissionsHandler).Methods("GET")
 	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
 
@@ -97,7 +98,7 @@ type Submission struct {
 	Id			    uint64  `json:"id" gorm:"primaryKey"`
 	Id_user_refer   uint64  `json:"id_user_refer"`
 	Id_iqra_refer   uint64  `json:"id_iqra_refer"`
-	Accuracy        float32 `json:"accuracy"`
+	Accuracy        float64 `json:"accuracy"`
 	Actual_result   string  `json:"actual_result"`
 	Expected_result string  `json:"expected_result"`
 }
@@ -441,7 +442,7 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 		var hasil database.Submission
 		hasil.Id_user_refer = id_user_refer
 		hasil.Id_iqra_refer = iqraData
-		hasil.Accuracy = score
+		hasil.Accuracy = float64(score)
 		hasil.Actual_result = resultnama
 		hasil.Expected_result = recordFileName
 
@@ -481,7 +482,10 @@ func (con *Connection) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 
 func (con *Connection) GetSubmissionsHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id := params["id"]
+	//var submission database.Submission
+	log.Println(params)
+
+	id := params["id_user_refer"]
 	//convert id user
 	s := id
 	id_user, err := strconv.ParseUint(s, 10, 64)
@@ -489,11 +493,12 @@ func (con *Connection) GetSubmissionsHandler(w http.ResponseWriter, r *http.Requ
 		fmt.Printf("%d of type %T", id_user, id_user)
 	}
 
-	if userSubmission, err := database.GetSubmissions(id_user, con.db); err != nil {
+	if result, err := database.GetSubmissions(id_user, con.db); err != nil {
 		log.Println("Error getting user's submission data ", err.Error())
 		return
 	} else {
-		WrapAPIData(w, r, userSubmission, http.StatusOK, "success")
+		log.Println(result)
+		WrapAPIData(w, r, result, http.StatusOK, "success")
 	}
 }
 
