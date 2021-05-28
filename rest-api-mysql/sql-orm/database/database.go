@@ -173,7 +173,7 @@ func Validate(id uint64, db *gorm.DB) (bool, error, uint64) {
 	var uservalidation User
 	var status bool
 
-	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
+	//data dari tabel saat ini bandingin datanya, kalo ada return true, kalo belum ada return false
 	if err := db.Where(&User{
 		Id: id,
 	}).First(&uservalidation).Error; err != nil {
@@ -291,4 +291,21 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+func EmailChecker(email string, db *gorm.DB) (bool, error) {
+	//data yang dipake buat validasi
+	var user User
+	var status bool
+
+	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
+	if err := db.Where(&User{
+		Email: email,
+	}).First(&user).Error; err != nil {
+		return false, err
+	} else {
+		status = true
+	}
+	//nilai apa yang mau dikembalikan
+	return status, nil
 }
