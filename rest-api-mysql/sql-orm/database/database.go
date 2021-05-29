@@ -173,6 +173,7 @@ func Validate(id uint64, db *gorm.DB) (bool, error, uint64) {
 	var uservalidation User
 	var status bool
 
+	log.Println(id)
 	//data dari tabel saat ini bandingin datanya, kalo ada return true, kalo belum ada return false
 	if err := db.Where(&User{
 		Id: id,

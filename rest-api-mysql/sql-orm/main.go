@@ -71,7 +71,7 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/submissions/{id_user_refer}", con.GetSubmissionsHandler).Methods("GET")
 	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
-	router.HandleFunc("/email", con.EmailCheckerHandler).Methods("GET")
+	router.HandleFunc("/email", con.EmailCheckerHandler).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }
 
@@ -221,12 +221,13 @@ func (con *Connection) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 	var user database.User
 	json.Unmarshal(body, &user)
 
+	log.Println(user)
 	//compare the user from the request, with the one we defined:
 	if _, err, id := database.Validate(user.Id, con.db); err != nil {
 		WrapAPIError(w, r, fmt.Sprintf("Please provide valid login details", err.Error()), http.StatusBadRequest)
 		return
 	} else {
-		//log.Println(id)
+		log.Println(id)
 		_, err, user := database.UpdateUser(id, user, con.db)
 		if err != nil {
 			WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
@@ -518,6 +519,30 @@ func (con *Connection) EmailCheckerHandler(w http.ResponseWriter, r *http.Reques
 	}
 	return
 }
+
+//func auth(w http.ResponseWriter, r *http.Request)  {
+//	data, err := ioutil.ReadAll(r.Body)
+//	if err != nil {
+//		panic(err.Error())
+//	}
+//	var user database.User
+//	json.Unmarshal(data, &user)
+//
+//
+//	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+//		if jwt.GetSigningMethod("HS256") != token.Method {
+//			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+//		}
+//
+//		return []byte("secret"), nil
+//	})
+//
+//	if token != nil && err == nil {
+//		fmt.Println("token verified")
+//	} else {
+//		WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusUnauthorized)
+//	}
+//}
 
 func main() {
 	cfg, err := getConfig()
