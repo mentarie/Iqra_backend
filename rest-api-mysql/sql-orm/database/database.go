@@ -294,15 +294,16 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func EmailChecker(email string, db *gorm.DB) (bool, error) {
+func ValidateEmail(user User, db *gorm.DB) (bool, error) {
 	//data yang dipake buat validasi
-	var user User
+	var uservalidation User
 	var status bool
 
-	//data dari tabel saat ini bandingin datanya, kalo sudah ada return false, kalo belum ada return true
+	//data dari tabel saat ini bandingin datanya, kalau sudah ada return false, kalo belum ada return true
 	if err := db.Where(&User{
-		Email: email,
-	}).First(&user).Error; err != nil {
+		Email: user.Email,
+	}).First(&uservalidation).Error; err != nil {
+		log.Println("failed to get data :", err.Error())
 		return false, err
 	} else {
 		status = true

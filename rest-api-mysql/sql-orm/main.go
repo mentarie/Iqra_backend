@@ -71,7 +71,7 @@ func handleRequest(con Connection) {
 	router.HandleFunc("/submissions/{id_user_refer}", con.GetSubmissionsHandler).Methods("GET")
 	router.HandleFunc("/delete", con.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/update", con.UpdateUserHandler).Methods("PUT")
-	router.HandleFunc("/email", con.EmailCheckerHandler).Methods("POST")
+
 	log.Fatal(http.ListenAndServe(":8081", router))
 }
 
@@ -196,11 +196,15 @@ func (con *Connection) CreateUserHandler(w http.ResponseWriter, r *http.Request)
 		WrapAPIError(w, r, fmt.Sprintf("Error while unmarshaling data : ", err.Error()), http.StatusBadRequest)
 		return
 	}
-
-	if err := database.CreateUser(user, con.db); err != nil {
-		WrapAPIError(w, r, fmt.Sprintf("Error while creating user : ", err.Error()), http.StatusBadRequest)
+	if _, err := database.ValidateEmail(user, con.db); err != nil {
+		if err := database.CreateUser(user, con.db); err != nil {
+			WrapAPIError(w, r, fmt.Sprintf("Error while creating user : ", err.Error()), http.StatusBadRequest)
+		} else {
+			WrapAPISuccess(w, r, "success", http.StatusOK)
+		}
 	} else {
-		WrapAPISuccess(w, r, "success", http.StatusOK)
+		WrapAPIError(w, r, fmt.Sprintf("Email telah digunakan!", err.Error()), http.StatusBadRequest)
+		return
 	}
 }
 
@@ -501,23 +505,6 @@ func (con *Connection) GetSubmissionsHandler(w http.ResponseWriter, r *http.Requ
 		log.Println(result)
 		WrapAPIData(w, r, result, http.StatusOK, "success")
 	}
-}
-
-func (con *Connection) EmailCheckerHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err.Error())
-	}
-	var user database.User
-	json.Unmarshal(body, &user)
-
-	if status, err := database.EmailChecker(user.Email, con.db); err != nil {
-		status := false
-		WrapAPIData(w, r, status, http.StatusOK, "data belum ada")
-	} else {
-		WrapAPIData(w, r, status, http.StatusOK, "data sudah ada")
-	}
-	return
 }
 
 //func auth(w http.ResponseWriter, r *http.Request)  {
